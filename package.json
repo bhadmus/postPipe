@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "bin":{
-    "post-json": "main.mjs"
+    "api-ci": "main.mjs"
   },
   "scripts": {
     "test": "post-json"
