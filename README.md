@@ -16,8 +16,11 @@ To use API-CI, you will need:
 ## Retrieving Postman API KEY
 - Login to Postman Web or Desktop
 - Click on the desired collection
-- Click on `Run`
-- Check the `Automate runs via CLI` radio button
+- Click on **`Run`**
+- Check the **`Automate runs via CLI`** radio button
+- Click on **`Add API Key`**
+- Click **`Generate Key`**
+- Insert a name and click **`Generate`**
 - Copy the Postman API Key
 
 ## Creating and Retrieving Tokens and App Password
