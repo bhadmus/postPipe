@@ -48,7 +48,7 @@ export GITHUB_TOKEN="your_github_token"
 export POSTMAN_API_KEY="your_postman_api_key"
 ```
 > [!NOTE]
-> For _**GitLab**_ and _**Bitbucket**_, replace **GITHUB** with **GITLAB** or **BITBUCKET_TOKEN** to have **GITLAB_TOKEN** or **BITBUCKET_TOKEN**
+> For _**GitLab**_ and _**Bitbucket**_, replace **GITHUB** with **GITLAB** or **BITBUCKET** to have **GITLAB_TOKEN** or **BITBUCKET_TOKEN**
 
 ## Usage
 - `api-ci` to run generally whereby the user can select from the three pipelines
