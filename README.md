@@ -1,4 +1,4 @@
-![image](banner.jpg)
+![image](banner-new.jpg)
 # API Collection to CI 
 
 
@@ -12,6 +12,13 @@ To use API-CI, you will need:
 - [ ] **GitHub Setup:** GitHub Personal Access Token  
 - [ ] **GitLab Setup:** GitLab Personal Access Token 
 - [ ] **Bitbucket Setup:** Bitbucket App Password 
+
+## Retrieving Postman API KEY
+- Login to Postman Web or Desktop
+- Click on the desired collection
+- Click on `Run`
+- Check the `Automate runs via CLI` radio button
+- Copy the Postman API Key
 
 ## Creating and Retrieving Tokens and App Password
 ### GitHub
