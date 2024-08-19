@@ -8,10 +8,10 @@ API-CI removes the hassle of manually uploading Postman collections, whether the
 
 ## Prerequisites
 To use API-CI, you will need:
-- [ ] Postman API Key.
-- [ ] **GitHub Setup:** GitHub Personal Access Token  
-- [ ] **GitLab Setup:** GitLab Personal Access Token 
-- [ ] **Bitbucket Setup:** Bitbucket App Password 
+-  Postman API Key.
+-  **GitHub Setup:** GitHub Personal Access Token  
+-  **GitLab Setup:** GitLab Personal Access Token 
+-  **Bitbucket Setup:** Bitbucket App Password 
 
 ## Retrieving Postman API KEY
 - Login to Postman Web or Desktop
