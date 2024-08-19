@@ -1,6 +1,6 @@
 {
-  "name": "js",
-  "version": "1.0.0",
+  "name": "api-ci",
+  "version": "1.0.0-alpha-1",
   "description": "",
   "main": "index.js",
   "bin":{
