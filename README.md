@@ -1,4 +1,4 @@
-![image](shots/banner.jpg)
+![image](shots/banner.png)
 # API Collection to CI 
 
 
