@@ -6,8 +6,12 @@
   "bin":{
     "api-ci": "main.mjs"
   },
+  "files": [
+    "main.mjs",
+    "src/"
+  ],
   "scripts": {
-    "test": "post-json"
+    "test": "api-ci"
   },
   "keywords": [],
   "author": "",
