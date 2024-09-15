@@ -283,6 +283,7 @@ async function startProcess(versionChoice) {
   });
 
   let repoFullName;
+  // let repoType
   if (repoChoice === "existing") {
     const { repoName } = await inquirer.prompt({
       type: "input",
@@ -290,17 +291,50 @@ async function startProcess(versionChoice) {
       message: "Enter the full repository name (e.g., username/repo):",
     });
     repoFullName = repoName;
-    // Check if README.md exists in the repository
-    if (!(await readmeExists(versionToken, repoFullName))) {
-      // Initialize the repository if README.md does not exist
-      if (
-        !(await initializeRepoWithReadme(
-          versionChoice,
-          versionToken,
-          repoFullName
-        ))
-      ) {
-        return;
+    switch (versionChoice){
+      case "GitHub":
+        // Check if README.md exists in the repository
+        if (!(await readmeExists(versionChoice, versionToken, repoFullName))) {
+          // Initialize the repository if README.md does not exist
+          if (
+            !(await initializeRepoWithReadme(
+              versionChoice,
+              versionToken,
+              repoFullName
+            ))
+          ) {
+            return;
+          }
+        }
+        break
+      case "Gitlab":
+        // Check if README.md exists in the repository
+        if (!(await readmeExists(versionChoice, versionToken, repoFullName))) {
+          // Initialize the repository if README.md does not exist
+          if (
+            !(await initializeRepoWithReadme(
+              versionChoice,
+              versionToken,
+              repoFullName
+            ))
+          ) {
+            return;
+          }
+        }
+        break
+      case "Bitbucket":  
+      // Check if README.md exists in the repository
+      if (!(await readmeExists(versionChoice, versionToken, repoFullName))) {
+        // Initialize the repository if README.md does not exist
+        if (
+          !(await initializeRepoWithReadme(
+            versionChoice,
+            versionToken,
+            repoFullName
+          ))
+        ) {
+          return;
+        }
       }
     }
   } else if (repoChoice === "new") {
