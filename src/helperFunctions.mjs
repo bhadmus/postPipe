@@ -251,7 +251,6 @@ pipelines:
  * @param {string} message - Commit message.
  */
 
-
 export async function makeCommit(
   versionChoice,
   token, // This could be a token for GitHub, or GitLab or an app password for Bitbucket
@@ -569,7 +568,6 @@ export async function makeCommit(
           const errorText = await commitResponse.text();
           throw new Error(`Failed to create commit: ${errorText}`);
         } else {
-        
           console.log(`Commit successfully created`);
         }
       } catch (error) {
@@ -660,41 +658,6 @@ export async function exportPostmanEnvironment(
     throw error;
   }
 }
-
-/**
- * Create a new GitHub repository.
- * @param {string} token - GitHub personal access token.
- * @param {string} repoName - Name of the repository to create.
- * @returns {string} - Full name of the created repository (e.g., username/repo).
- */
-// export async function createGithubRepo(token, repoName) {
-//   try {
-//     console.log(`Creating GitHub repository ${repoName}`);
-//     const response = await fetch("https://api.github.com/user/repos", {
-//       method: "POST",
-//       headers: {
-//         Authorization: `token ${token}`,
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify({
-//         name: repoName,
-//         private: false,
-//       }),
-//     });
-//     const data = await response.json();
-//     if (!response.ok) {
-//       throw new Error(`Failed to create GitHub repository: ${data.message}`);
-//     }
-//     console.log("GitHub repository created successfully:", data.full_name);
-//     return data.full_name;
-//   } catch (error) {
-//     console.error(
-//       "An error occurred while creating the GitHub repository:",
-//       error.message
-//     );
-//     throw error;
-//   }
-// }
 
 /**
  * Create a new repository.
@@ -916,7 +879,7 @@ export async function verifyGithubActionsWorkflow(
  * @param {string} repoFullName - Full repository name (e.g., username/repo).
  * @returns {boolean} - True if initialization is successful, false otherwise.
  */
-// COMPLETE FOR GITLAB AND BITBUCKET LATER
+
 export async function initializeRepoWithReadme(
   versionChoice,
   token,
@@ -1050,24 +1013,102 @@ export async function initializeRepoWithReadme(
  * @returns {boolean} - True if README.md exists, false otherwise.
  */
 // COMPLETE FOR GITLAB AND BITBUCKET LATER
-export async function readmeExists(token, repoFullName) {
-  try {
-    console.log(`Checking if README.md exists in repository ${repoFullName}`);
-    const apiUrl = `https://api.github.com/repos/${repoFullName}/contents/README.md`;
-    const response = await fetch(apiUrl, {
-      headers: {
-        Authorization: `token ${token}`,
-      },
-    });
-    console.log(
-      `README.md ${response.status === 200 ? "exists" : "does not exist"}`
-    );
-    return response.status === 200;
-  } catch (error) {
-    console.error(
-      "An error occurred while checking if README.md exists:",
-      error.message
-    );
-    throw error;
+export async function readmeExists(versionChoice, token, repoFullName) {
+  switch (versionChoice) {
+    case "GitHub":
+      try {
+        console.log(
+          `Checking if README.md exists in GitHub repository ${repoFullName}`
+        );
+        const apiUrl = `https://api.github.com/repos/${repoFullName}/contents/README.md`;
+        const response = await fetch(apiUrl, {
+          headers: {
+            Authorization: `token ${token}`,
+          },
+        });
+        console.log(
+          `README.md ${response.status === 200 ? "exists" : "does not exist"}`
+        );
+        return response.status === 200;
+      } catch (error) {
+        console.error(
+          "An error occurred while checking if README.md exists in GitHub:",
+          error.message
+        );
+        throw error;
+      }
+      break
+
+    case "Gitlab":
+      try {
+        // Split the repoFullName into namespace and project
+        const [namespace, project] = repoFullName.split("/");
+
+        // Build the API URL to check for the README.md file in the default branch (main)
+        const apiUrl = `https://gitlab.com/api/v4/projects/${encodeURIComponent(
+          namespace
+        )}%2F${encodeURIComponent(
+          project
+        )}/repository/files/README.md?ref=main`;
+
+        console.log(
+          `Checking if README.md exists in GitLab repository ${repoFullName}...`
+        );
+
+        const response = await fetch(apiUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 200) {
+          console.log("README.md exists in the repository.");
+          return true;
+        } else if (response.status === 404) {
+          console.log("README.md does not exist in the repository.");
+          return false;
+        } else {
+          console.log("Unexpected response:", response.status);
+          return false;
+        }
+      } catch (error) {
+        console.error(
+          "An error occurred while checking for README.md in GitLab:",
+          error.message
+        );
+        throw error;
+      }
+      break;
+
+    case "Bitbucket":
+      const { bitBucketName } = await inquirer.prompt({
+        type: "input",
+        name: "bitBucketName",
+        message: "What is your BitBucket username?",
+      });
+      username = bitBucketName;
+      try {
+        console.log(
+          `Checking if README.md exists in BitBucket repository ${repoFullName}`
+        );
+        const apiUrl = `https://api.bitbucket.org/2.0/repositories/${repoFullName}/src/main/README.md`;
+        const response = await fetch(apiUrl, {
+          headers: {
+            Authorization: `Basic ${Buffer.from(
+              `${username}:${token}`
+            ).toString("base64")}`,
+          },
+        });
+        const readmeExists = response.status === 200;
+
+        console.log(`README.md ${readmeExists ? "exists" : "does not exist"}`);
+        return readmeExists;
+      } catch (error) {
+        console.error(
+          "An error occurred while checking if README.md exists:",
+          error.message
+        );
+        throw error;
+      }
   }
 }
