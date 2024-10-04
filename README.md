@@ -4,10 +4,12 @@
 
 ## Overview
 
-API-CI removes the hassle of manually uploading Postman collections, whether they are from a UID or a saved file, into your CI/CD pipeline on GitHub, GitLab, or Bitbucket. It automates the process of exporting collections, setting up the required YAML pipeline, and making the initial commit, allowing you to focus on development rather than CI configuration.
+This project is a spin-off of this amazing [Python Package](https://pypi.org/project/postman-github-sync/) find the parent repository [here](https://github.com/BlazinArtemis/postman_to_github_actions). This brilliant SDET [Seyi 'nexus' Ajadi](https://github.com/BlazinArtemis) conceived the idea to ensure that engineers can focus on testing and creating collections while pipeline config will be handled via a simple Q&A. I merely expanded it to work on more pipelines.
+
+postFlow removes the hassle of manually uploading Postman collections, whether they are from a UID or a saved file, into your CI/CD pipeline on GitHub, GitLab, or Bitbucket. It automates the process of exporting collections, setting up the required YAML pipeline, and making the initial commit, allowing you to focus on development rather than CI configuration.
 
 ## Prerequisites
-To use API-CI, you will need:
+To use postFlow, you will need:
 -  Postman API Key.
 -  **GitHub Setup:** GitHub Personal Access Token  
 -  **GitLab Setup:** GitLab Personal Access Token 
@@ -62,7 +64,7 @@ export POSTMAN_API_KEY="your_postman_api_key"
 > For _**GitLab**_ and _**Bitbucket**_, replace **GITHUB** with **GITLAB** or **BITBUCKET** to have **GITLAB_TOKEN** or **BITBUCKET_TOKEN**
 
 ## Usage
-- `api-ci` to run generally whereby the user can select from the three pipelines
-- `api-ci --github` to run a GitHub setup pipeline.
-- `api-ci --gitlab` to run a GitLab setup pipeline.
-- `api-ci --bitbucket` to run a Bitbucket setup pipeline.
+- `postFlow` to run generally whereby the user can select from the three pipelines
+- `postFlow --github` to run a GitHub setup pipeline.
+- `postFlow --gitlab` to run a GitLab setup pipeline.
+- `postFlow --bitbucket` to run a Bitbucket setup pipeline.
