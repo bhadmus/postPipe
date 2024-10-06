@@ -1,6 +1,6 @@
 {
   "name": "postpipe",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An helper bot for deploying API collections to pipelines",
   "main": "index.js",
   "bin":{
@@ -13,9 +13,23 @@
   "scripts": {
     "test": "postPipe"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhadmus/postPipe.git"
+  },
+  "keywords": [
+    "postman",
+    "github",
+    "gitlab",
+    "cli",
+    "bitbucket"
+  ],
+  "author": "Ademola Bhadmus",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bhadmus/postPipe/issues"
+  },
+  "homepage": "https://github.com/bhadmus/postPipe#readme",
   "dependencies": {
     "child_process": "^1.0.2",
     "dotenv": "^16.4.5",
