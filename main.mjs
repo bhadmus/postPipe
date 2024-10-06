@@ -10,7 +10,7 @@ import {
   makeCommit,
   exportPostmanCollection,
   createRepo,
-  verifyGithubActionsWorkflow,
+  verifyGithubActionsWorkPipe,
   initializeRepoWithReadme,
   readmeExists,
   createAndInstallPackageJson,

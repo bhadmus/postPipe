@@ -2,9 +2,9 @@ Here's a basic `CONTRIBUTING.md` file that outlines how contributors can help wi
 
 ---
 
-# Contributing to PostFlow
+# Contributing to PostPipe
 
-Thank you for considering contributing to **PostFlow**! We appreciate your efforts in improving the project. Below are the guidelines to help you get started.
+Thank you for considering contributing to **PostPipe**! We appreciate your efforts in improving the project. Below are the guidelines to help you get started.
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ Thank you for considering contributing to **PostFlow**! We appreciate your effor
 1. Fork the repository.
 2. Clone your fork:
    ```bash
-   git clone https://github.com/bhadmus/postFlow.git
+   git clone https://github.com/bhadmus/postPipe.git
    ```
 3. Install the project dependencies:
    ```bash

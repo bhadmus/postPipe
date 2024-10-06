@@ -1,17 +1,17 @@
 {
-  "name": "postflow",
+  "name": "postpipe",
   "version": "1.0.0",
   "description": "An helper bot for deploying API collections to pipelines",
   "main": "index.js",
   "bin":{
-    "postFlow": "main.mjs"
+    "postPipe": "main.mjs"
   },
   "files": [
     "main.mjs",
     "src/"
   ],
   "scripts": {
-    "test": "api-ci"
+    "test": "postPipe"
   },
   "keywords": [],
   "author": "",
