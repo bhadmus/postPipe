@@ -2,6 +2,7 @@
 
 import fs from "fs-extra";
 import path from "path";
+import { fileURLToPath } from 'url';
 import fetch from "node-fetch";
 import inquirer from "inquirer";
 import { config } from "dotenv";
@@ -20,8 +21,15 @@ import {
 // Load environment variables
 config();
 
-const scriptDir = path.dirname(new URL(import.meta.url).pathname);
-const { version } = JSON.parse(fs.readFileSync(path.resolve(scriptDir, 'package.json')));
+// Get the directory name of the current module
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Use path.resolve to construct the correct file path
+const packageJsonPath = path.resolve(__dirname, 'package.json');
+
+// Read the package.json file
+const { version } = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+
 const args = process.argv.slice(2);
 
 if (args.includes("--version") || args.includes("-V")) {
@@ -43,7 +51,7 @@ async function startProcess(versionChoice) {
         versionToken = token;
         process.env.GITHUB_TOKEN = versionToken;
         fs.appendFileSync(
-          path.join(process.env.HOME, ".bashrc"),
+          path.resolve(process.env.HOME, ".bashrc"),
           `\nexport GITHUB_TOKEN=${versionToken}\n`
         );
       }
@@ -59,7 +67,7 @@ async function startProcess(versionChoice) {
         versionToken = token;
         process.env.GITLAB_TOKEN = versionToken;
         fs.appendFileSync(
-          path.join(process.env.HOME, ".bashrc"),
+          path.resolve(process.env.HOME, ".bashrc"),
           `\nexport GITLAB_TOKEN=${versionToken}\n`
         );
       }
@@ -75,13 +83,12 @@ async function startProcess(versionChoice) {
         versionToken = token;
         process.env.BITBUCKET_TOKEN = versionToken;
         fs.appendFileSync(
-          path.join(process.env.HOME, ".bashrc"),
+          path.resolve(process.env.HOME, ".bashrc"),
           `\nexport BITBUCKET_TOKEN=${versionToken}\n`
         );
       }
   }
 
-  // Check if the collection requires an environment
   const { environmentRequired } = await inquirer.prompt({
     type: "confirm",
     name: "environmentRequired",
@@ -89,7 +96,6 @@ async function startProcess(versionChoice) {
     default: false,
   });
 
-  // Ask if the Postman collection is from UID or file
   const { collectionSource } = await inquirer.prompt({
     type: "list",
     name: "collectionSource",
@@ -100,7 +106,7 @@ async function startProcess(versionChoice) {
 
   let collectionFilePath;
   let environmentFilePath;
-  // let versionToolType = versionChoice;
+
   if (!environmentRequired) {
     if (collectionSource === "UID") {
       let postmanApiKey = process.env.POSTMAN_API_KEY;
@@ -113,7 +119,7 @@ async function startProcess(versionChoice) {
         postmanApiKey = apiKey;
         process.env.POSTMAN_API_KEY = postmanApiKey;
         fs.appendFileSync(
-          path.join(process.env.HOME, ".bashrc"),
+          path.resolve(process.env.HOME, ".bashrc"),
           `\nexport POSTMAN_API_KEY=${postmanApiKey}\n`
         );
       }
@@ -122,7 +128,7 @@ async function startProcess(versionChoice) {
         name: "collectionId",
         message: "Enter the Postman collection ID:",
       });
-      collectionFilePath = "collection.json";
+      collectionFilePath = path.resolve(process.cwd(), "collection.json");
       await exportPostmanCollection(
         postmanApiKey,
         collectionId,
@@ -134,13 +140,12 @@ async function startProcess(versionChoice) {
         name: "filePath",
         message: "Enter the path to the Postman collection JSON file:",
       });
-      collectionFilePath = filePath;
+      collectionFilePath = path.resolve(process.cwd(), filePath);
     } else {
       console.log("Invalid option. Exiting.");
       return;
     }
   } else {
-    // Ask if the Postman environment is from UID or file
     const { environmentSource } = await inquirer.prompt({
       type: "list",
       name: "environmentSource",
@@ -159,7 +164,7 @@ async function startProcess(versionChoice) {
         postmanApiKey = apiKey;
         process.env.POSTMAN_API_KEY = postmanApiKey;
         fs.appendFileSync(
-          path.join(process.env.HOME, ".bashrc"),
+          path.resolve(process.env.HOME, ".bashrc"),
           `\nexport POSTMAN_API_KEY=${postmanApiKey}\n`
         );
       }
@@ -168,13 +173,13 @@ async function startProcess(versionChoice) {
         name: "collectionId",
         message: "Enter the Postman collection ID:",
       });
-      collectionFilePath = "collection.json";
+      collectionFilePath = path.resolve(process.cwd(), "collection.json");
       const { environmentId } = await inquirer.prompt({
         type: "input",
         name: "environmentId",
         message: "Enter the Postman environment ID:",
       });
-      environmentFilePath = "environment.json";
+      environmentFilePath = path.resolve(process.cwd(), "environment.json");
       await exportPostmanCollection(
         postmanApiKey,
         collectionId,
@@ -194,13 +199,13 @@ async function startProcess(versionChoice) {
         name: "filePath",
         message: "Enter the path to the Postman collection JSON file:",
       });
-      collectionFilePath = filePath;
+      collectionFilePath = path.resolve(process.cwd(), filePath);
       const { envPath } = await inquirer.prompt({
         type: "input",
         name: "envPath",
         message: "Enter the path to the Postman environment JSON file:",
       });
-      environmentFilePath = envPath;
+      environmentFilePath = path.resolve(process.cwd(), envPath);
     } else if (environmentSource === "filepath" && collectionSource === "UID") {
       let postmanApiKey = process.env.POSTMAN_API_KEY;
       if (!postmanApiKey) {
@@ -212,7 +217,7 @@ async function startProcess(versionChoice) {
         postmanApiKey = apiKey;
         process.env.POSTMAN_API_KEY = postmanApiKey;
         fs.appendFileSync(
-          path.join(process.env.HOME, ".bashrc"),
+          path.resolve(process.env.HOME, ".bashrc"),
           `\nexport POSTMAN_API_KEY=${postmanApiKey}\n`
         );
       }
@@ -221,13 +226,13 @@ async function startProcess(versionChoice) {
         name: "collectionId",
         message: "Enter the Postman collection ID:",
       });
-      collectionFilePath = "collection.json";
+      collectionFilePath = path.resolve(process.cwd(), "collection.json");
       const { envPath } = await inquirer.prompt({
         type: "input",
         name: "envPath",
         message: "Enter the path to the Postman environment JSON file:",
       });
-      environmentFilePath = envPath;
+      environmentFilePath = path.resolve(process.cwd(), envPath);
       await exportPostmanCollection(
         postmanApiKey,
         collectionId,
@@ -244,7 +249,7 @@ async function startProcess(versionChoice) {
         postmanApiKey = apiKey;
         process.env.POSTMAN_API_KEY = postmanApiKey;
         fs.appendFileSync(
-          path.join(process.env.HOME, ".bashrc"),
+          path.resolve(process.env.HOME, ".bashrc"),
           `\nexport POSTMAN_API_KEY=${postmanApiKey}\n`
         );
       }
@@ -253,13 +258,13 @@ async function startProcess(versionChoice) {
         name: "filePath",
         message: "Enter the path to the Postman collection JSON file:",
       });
-      collectionFilePath = filePath;
+      collectionFilePath = path.resolve(process.cwd(), filePath);
       const { environmentId } = await inquirer.prompt({
         type: "input",
         name: "environmentId",
         message: "Enter the Postman environment ID:",
       });
-      environmentFilePath = "environment.json";
+      environmentFilePath = path.resolve(process.cwd(), "environment.json");
       await exportPostmanEnvironment(
         postmanApiKey,
         environmentId,
@@ -268,12 +273,10 @@ async function startProcess(versionChoice) {
     }
   }
 
-  // Verify if collection.json file is created and exists locally
   if (!fs.existsSync(collectionFilePath)) {
     throw new Error("Collection file not found. Exiting.");
   }
 
-  // Ask if it is a new or existing repo
   const { repoChoice } = await inquirer.prompt({
     type: "list",
     name: "repoChoice",
@@ -283,7 +286,6 @@ async function startProcess(versionChoice) {
   });
 
   let repoFullName;
-  // let repoType
   if (repoChoice === "existing") {
     const { repoName } = await inquirer.prompt({
       type: "input",
@@ -293,24 +295,9 @@ async function startProcess(versionChoice) {
     repoFullName = repoName;
     switch (versionChoice){
       case "GitHub":
-        // Check if README.md exists in the repository
-        if (!(await readmeExists(versionChoice, versionToken, repoFullName))) {
-          // Initialize the repository if README.md does not exist
-          if (
-            !(await initializeRepoWithReadme(
-              versionChoice,
-              versionToken,
-              repoFullName
-            ))
-          ) {
-            return;
-          }
-        }
-        break
       case "Gitlab":
-        // Check if README.md exists in the repository
+      case "Bitbucket":
         if (!(await readmeExists(versionChoice, versionToken, repoFullName))) {
-          // Initialize the repository if README.md does not exist
           if (
             !(await initializeRepoWithReadme(
               versionChoice,
@@ -321,21 +308,7 @@ async function startProcess(versionChoice) {
             return;
           }
         }
-        break
-      case "Bitbucket":  
-      // Check if README.md exists in the repository
-      if (!(await readmeExists(versionChoice, versionToken, repoFullName))) {
-        // Initialize the repository if README.md does not exist
-        if (
-          !(await initializeRepoWithReadme(
-            versionChoice,
-            versionToken,
-            repoFullName
-          ))
-        ) {
-          return;
-        }
-      }
+        break;
     }
   } else if (repoChoice === "new") {
     const { repoName } = await inquirer.prompt({
@@ -348,7 +321,6 @@ async function startProcess(versionChoice) {
       console.log("Failed to create the repository. Exiting.");
       return;
     }
-    // Initialize the new repository with a README
     if (
       !(await initializeRepoWithReadme(
         versionChoice,
@@ -363,19 +335,18 @@ async function startProcess(versionChoice) {
     return;
   }
 
-  // Generate YAML file
   let outputYamlFilePath;
   switch (versionChoice) {
     case "GitHub":
-      const githubDir = path.join(process.cwd(), ".github", "workflows");
-      fs.ensureDirSync(githubDir); // Ensure the directory exists
-      outputYamlFilePath = path.join(githubDir, "postman-tests.yml");
+      const githubDir = path.resolve(process.cwd(), ".github", "workflows");
+      fs.ensureDirSync(githubDir);
+      outputYamlFilePath = path.resolve(githubDir, "postman-tests.yml");
       break;
     case "Gitlab":
-      outputYamlFilePath = path.join(process.cwd(), ".gitlab-ci.yml");
+      outputYamlFilePath = path.resolve(process.cwd(), ".gitlab-ci.yml");
       break;
     case "Bitbucket":
-      outputYamlFilePath = path.join(process.cwd(), "bitbucket-pipelines.yml");
+      outputYamlFilePath = path.resolve(process.cwd(), "bitbucket-pipelines.yml");
   }
   generateYaml(
     versionChoice,
@@ -384,39 +355,35 @@ async function startProcess(versionChoice) {
     outputYamlFilePath
   );
 
-  // Verify if the YAML file is created and exists locally
   if (!fs.existsSync(outputYamlFilePath)) {
     throw new Error("YAML file not found. Exiting.");
   }
 
-  // Create and install package.json with dependencies
   const projectDir = process.cwd();
   createAndInstallPackageJson(projectDir, { collectionFilePath });
 
-  // Verify if package.json and package-lock.json are created and exist locally
   if (
-    !fs.existsSync(path.join(projectDir, "package.json")) ||
-    !fs.existsSync(path.join(projectDir, "package-lock.json"))
+    !fs.existsSync(path.resolve(projectDir, "package.json")) ||
+    !fs.existsSync(path.resolve(projectDir, "package-lock.json"))
   ) {
     throw new Error("package.json or package-lock.json not found. Exiting.");
   }
 
-  // Commit changes to the repository
   let commitFiles;
   if (environmentFilePath) {
     commitFiles = [
       outputYamlFilePath,
       collectionFilePath,
       environmentFilePath,
-      path.join(projectDir, "package.json"),
-      path.join(projectDir, "package-lock.json"),
+      path.resolve(projectDir, "package.json"),
+      path.resolve(projectDir, "package-lock.json"),
     ];
   } else {
     commitFiles = [
       outputYamlFilePath,
       collectionFilePath,
-      path.join(projectDir, "package.json"),
-      path.join(projectDir, "package-lock.json"),
+      path.resolve(projectDir, "package.json"),
+      path.resolve(projectDir, "package-lock.json"),
     ];
   }
   const commitMessage = "Create Pipeline Config";
@@ -428,11 +395,9 @@ async function startProcess(versionChoice) {
     commitMessage
   );
 
-  // Wait to ensure that the workflow file is processed by GitHub
   if (versionChoice === "GitHub") {
-    await new Promise((resolve) => setTimeout(resolve, 10000)); // Wait 10 seconds
+    await new Promise((resolve) => setTimeout(resolve, 10000));
 
-    // Verify GitHub Actions workflow
     const workflowCreated = await verifyGithubActionsWorkflow(repoFullName);
     if (workflowCreated) {
       console.log("GitHub Actions workflow was successfully created.");
@@ -453,11 +418,9 @@ async function main() {
       versionChoice = "Bitbucket";
     }
 
-    // If a specific flag is provided, run the corresponding process
     if (versionChoice) {
       await startProcess(versionChoice);
     } else {
-      // If no flags are provided, run the entire script as before
       const { versionChoice: chosenVersionChoice } = await inquirer.prompt({
         type: "list",
         name: "versionChoice",
@@ -472,5 +435,4 @@ async function main() {
   }
 }
 
-// Run the main function
 main().catch((error) => console.error(error));
