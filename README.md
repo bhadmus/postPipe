@@ -55,6 +55,12 @@ To use postPipe, you will need:
 setx GITHUB_TOKEN "your_github_token"
 setx POSTMAN_API_KEY "your_postman_api_key"
 ```
+or
+```
+set GITHUB_TOKEN=<your_github_token>
+set POSTMAN_API_KEY=<your_postman_api_key>
+```
+
 ### MacOS/Linux
 ```
 export GITHUB_TOKEN="your_github_token"
