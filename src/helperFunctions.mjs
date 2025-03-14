@@ -97,7 +97,7 @@ jobs:
             npx newman run ${collectionFilePath} -r cli,htmlextra --reporter-htmlextra-export ./newman/results.html
 
         - name: Upload Test Results
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: postman-test-results
             path: ./newman/results.html
@@ -136,7 +136,7 @@ jobs:
             npx newman run ${collectionFilePath} -e ${environmentFilePath} -r cli,htmlextra --reporter-htmlextra-export ./newman/results.html
 
         - name: Upload Test Results
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: postman-test-results
             path: ./newman/results.html
