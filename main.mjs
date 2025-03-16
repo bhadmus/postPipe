@@ -2,7 +2,7 @@
 
 import fs from "fs-extra";
 import path from "path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 import fetch from "node-fetch";
 import inquirer from "inquirer";
 import { config } from "dotenv";
@@ -16,6 +16,7 @@ import {
   readmeExists,
   createAndInstallPackageJson,
   exportPostmanEnvironment,
+  moveJsonFile,
 } from "./src/helperFunctions.mjs";
 
 // Load environment variables
@@ -25,10 +26,21 @@ config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Use path.resolve to construct the correct file path
-const packageJsonPath = path.resolve(__dirname, 'package.json');
+const packageJsonPath = path.resolve(__dirname, "package.json");
+
+// Create a root folder to collect the collection and environment
+
+const requestDir = [
+  path.join(process.cwd(), "endpoints", "collection"),
+  path.join(process.cwd(), "endpoints", "environment"),
+];
+
+for (const dir of requestDir) {
+  fs.ensureDir(dir);
+}
 
 // Read the package.json file
-const { version } = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+const { version } = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 
 const args = process.argv.slice(2);
 
@@ -106,6 +118,8 @@ async function startProcess(versionChoice) {
 
   let collectionFilePath;
   let environmentFilePath;
+  // let rootCollectionFilePath;
+  // let rootEnvironmentFilePath;
 
   if (!environmentRequired) {
     if (collectionSource === "UID") {
@@ -128,7 +142,12 @@ async function startProcess(versionChoice) {
         name: "collectionId",
         message: "Enter the Postman collection ID:",
       });
-      collectionFilePath = path.resolve(process.cwd(), "collection.json");
+      collectionFilePath = path.join(
+        process.cwd(),
+        "endpoints",
+        "collection",
+        "collection.json"
+      );
       await exportPostmanCollection(
         postmanApiKey,
         collectionId,
@@ -140,7 +159,10 @@ async function startProcess(versionChoice) {
         name: "filePath",
         message: "Enter the path to the Postman collection JSON file:",
       });
-      collectionFilePath = path.resolve(process.cwd(), filePath);
+      collectionFilePath = moveJsonFile(
+        filePath,
+        path.join(process.cwd(), "endpoints", "collection")
+      );
     } else {
       console.log("Invalid option. Exiting.");
       return;
@@ -173,13 +195,23 @@ async function startProcess(versionChoice) {
         name: "collectionId",
         message: "Enter the Postman collection ID:",
       });
-      collectionFilePath = path.resolve(process.cwd(), "collection.json");
+      collectionFilePath = path.join(
+        process.cwd(),
+        "endpoints",
+        "collection",
+        "collection.json"
+      );
       const { environmentId } = await inquirer.prompt({
         type: "input",
         name: "environmentId",
         message: "Enter the Postman environment ID:",
       });
-      environmentFilePath = path.resolve(process.cwd(), "environment.json");
+      environmentFilePath = path.join(
+        process.cwd(),
+        "endpoints",
+        "collection",
+        "environment.json"
+      );
       await exportPostmanCollection(
         postmanApiKey,
         collectionId,
@@ -199,13 +231,13 @@ async function startProcess(versionChoice) {
         name: "filePath",
         message: "Enter the path to the Postman collection JSON file:",
       });
-      collectionFilePath = path.resolve(process.cwd(), filePath);
+      collectionFilePath = moveJsonFile(filePath, path.join(process.cwd(), 'endpoints', 'collection'));
       const { envPath } = await inquirer.prompt({
         type: "input",
         name: "envPath",
         message: "Enter the path to the Postman environment JSON file:",
       });
-      environmentFilePath = path.resolve(process.cwd(), envPath);
+      environmentFilePath = moveJsonFile(envPath, path.join(process.cwd(), 'endpoints', 'environment'));
     } else if (environmentSource === "filepath" && collectionSource === "UID") {
       let postmanApiKey = process.env.POSTMAN_API_KEY;
       if (!postmanApiKey) {
@@ -226,13 +258,18 @@ async function startProcess(versionChoice) {
         name: "collectionId",
         message: "Enter the Postman collection ID:",
       });
-      collectionFilePath = path.resolve(process.cwd(), "collection.json");
+      collectionFilePath = path.join(
+        process.cwd(),
+        "endpoints",
+        "collection",
+        "collection.json"
+      );
       const { envPath } = await inquirer.prompt({
         type: "input",
         name: "envPath",
         message: "Enter the path to the Postman environment JSON file:",
       });
-      environmentFilePath = path.resolve(process.cwd(), envPath);
+      environmentFilePath = moveJsonFile(envPath, path.join(process.cwd(), 'endpoints', 'environment'));
       await exportPostmanCollection(
         postmanApiKey,
         collectionId,
@@ -258,13 +295,18 @@ async function startProcess(versionChoice) {
         name: "filePath",
         message: "Enter the path to the Postman collection JSON file:",
       });
-      collectionFilePath = path.resolve(process.cwd(), filePath);
+      collectionFilePath = moveJsonFile(filePath, path.join(process.cwd(), 'endpoints', 'collection'));
       const { environmentId } = await inquirer.prompt({
         type: "input",
         name: "environmentId",
         message: "Enter the Postman environment ID:",
       });
-      environmentFilePath = path.resolve(process.cwd(), "environment.json");
+      environmentFilePath = path.join(
+        process.cwd(),
+        "endpoints",
+        "collection",
+        "environment.json"
+      );
       await exportPostmanEnvironment(
         postmanApiKey,
         environmentId,
@@ -293,7 +335,7 @@ async function startProcess(versionChoice) {
       message: "Enter the full repository name (e.g., username/repo):",
     });
     repoFullName = repoName;
-    switch (versionChoice){
+    switch (versionChoice) {
       case "GitHub":
       case "Gitlab":
       case "Bitbucket":
@@ -346,12 +388,20 @@ async function startProcess(versionChoice) {
       outputYamlFilePath = path.resolve(process.cwd(), ".gitlab-ci.yml");
       break;
     case "Bitbucket":
-      outputYamlFilePath = path.resolve(process.cwd(), "bitbucket-pipelines.yml");
+      outputYamlFilePath = path.resolve(
+        process.cwd(),
+        "bitbucket-pipelines.yml"
+      );
   }
+  const relativeCollectionPath = path.relative(process.cwd(), collectionFilePath).replace(/\\/g, "/");
+  const relativeEnvironmentPath = environmentFilePath
+    ? path.relative(process.cwd(), environmentFilePath).replace(/\\/g, "/")
+    : null;
+
   generateYaml(
     versionChoice,
-    collectionFilePath,
-    environmentFilePath,
+    relativeCollectionPath,
+    relativeEnvironmentPath,
     outputYamlFilePath
   );
 

@@ -45,6 +45,75 @@ export function createAndInstallPackageJson(dirPath, dependencies) {
   console.log("Dependencies installed successfully.");
 }
 
+export function moveJsonFile(sourceFilePath, targetDir) {
+  try {
+    // Check if sourceFilePath is defined
+    if (!sourceFilePath) {
+      throw new Error("Source file path is undefined.");
+    }
+
+    // Debug: Log the input sourceFilePath
+    console.log("Input sourceFilePath:", sourceFilePath);
+
+    // Resolve the source file path
+    const resolvedSourceFilePath = path.normalize(sourceFilePath);
+    console.log("Resolved source file path:", resolvedSourceFilePath);
+
+    // Ensure the source file exists and is a JSON file
+    if (!fs.existsSync(resolvedSourceFilePath)) {
+      throw new Error(`Source file does not exist: ${resolvedSourceFilePath}`);
+    }
+    if (path.extname(resolvedSourceFilePath).toLowerCase() !== ".json") {
+      throw new Error(`Source file is not a JSON file: ${resolvedSourceFilePath}`);
+    }
+
+    // Ensure the target directory exists
+    try {
+      fs.ensureDirSync(targetDir);
+      console.log("Target directory created or already exists:", targetDir);
+    } catch (error) {
+      throw new Error(`Failed to create target directory: ${error.message}`);
+    }
+
+    // Extract the filename from the source path
+    let fileName;
+    try {
+      fileName = path.basename(resolvedSourceFilePath);
+      console.log("File name:", fileName);
+    } catch (error) {
+      throw new Error(`Failed to extract filename: ${error.message}`);
+    }
+
+    // Construct the target file path
+    let targetFilePath;
+    try {
+      targetFilePath = path.join(targetDir, fileName);
+      console.log("Target file path:", targetFilePath);
+    } catch (error) {
+      throw new Error(`Failed to construct target file path: ${error.message}`);
+    }
+
+    // Move the file
+    try {
+      fs.moveSync(resolvedSourceFilePath, targetFilePath, { overwrite: true });
+      console.log(`File moved successfully to: ${targetFilePath}`);
+    } catch (error) {
+      throw new Error(`Failed to move the file: ${error.message}`);
+    }
+
+    // Verify the file was moved
+    if (fs.existsSync(targetFilePath)) {
+      console.log("File verification successful.");
+      return targetFilePath; // Return the path of the moved file
+    } else {
+      throw new Error("Failed to verify the moved file.");
+    }
+  } catch (error) {
+    console.error("An error occurred while moving the file:", error.message);
+    throw error; // Rethrow the error if you want the calling code to handle it
+  }
+}
+
 /**
  * Generate a specific YAML file for running Postman tests.
  * @param {string} versionChoice - Version Control tool type.
@@ -52,6 +121,8 @@ export function createAndInstallPackageJson(dirPath, dependencies) {
  * @param {string} environmentFilePath - Path to the Postman environment JSON file.
  * @param {string} outputYamlFilePath - Path where the YAML file should be saved.
  */
+
+
 export function generateYaml(
   versionChoice,
   collectionFilePath,
@@ -60,6 +131,13 @@ export function generateYaml(
 ) {
   const outputDir = path.dirname(outputYamlFilePath);
   fs.ensureDirSync(outputDir);
+  /** SOLUTION
+   * CREATE A ROOT FOLDER FOR WHAT'S TO BE CONVERTED
+   * EXTRACT THE COLLECTION INTO THE NEW JSON FILE IN A SPECIFIED PLACE IN THE ROOT FOLDER
+   * THAT FORMS THE COLLECTION FILE PATH. SAME MODEL FOR ENVIRONMENT FILE PATH AS WELL.
+   * IN SHAA ALLAH
+   */
+
   let yamlFileContent;
   switch (versionChoice) {
     case "GitHub":
@@ -253,7 +331,7 @@ pipelines:
 
 export async function makeCommit(
   versionChoice,
-  token, // This could be a token for GitHub, or GitLab or an app password for Bitbucket
+  token,
   repoFullName,
   files,
   message
@@ -263,27 +341,42 @@ export async function makeCommit(
       try {
         const headers = {
           Authorization: `token ${token}`,
-          Accept: "application/vnd.github.v3+json", // Correct header for GitHub API
+          Accept: "application/vnd.github.v3+json",
         };
 
         const branch = "main";
         const fileBlobs = [];
 
+        // Process each file to be committed
         for (const file of files) {
-          const content = fs.readFileSync(file, "base64");
-          const repoFilePath = path
-            .relative(process.cwd(), file)
-            .replace(/\\/g, "/"); // Ensure the file path is relative and uses forward slashes
+          // Ensure the file exists
+          if (!fs.existsSync(file)) {
+            throw new Error(`File not found: ${file}`);
+          }
 
+          // Read file content as base64
+          const content = fs.readFileSync(file, "base64");
+
+          // Normalize the path and ensure it uses forward slashes
+          const repoFilePath = path.relative(process.cwd(), file).replace(/\\/g, "/");
+
+          // Validate the path to ensure it doesn't contain illegal characters
+          if (!/^[a-zA-Z0-9_\-./]+$/.test(repoFilePath)) {
+            throw new Error(`Invalid file path: ${repoFilePath}`);
+          }
+
+          console.log(`Preparing to commit file: ${repoFilePath}`); // Debugging
+
+          // Add the file to the list of blobs to be committed
           fileBlobs.push({
             path: repoFilePath,
-            content,
+            content: content,
           });
         }
 
         // Fetch the latest commit SHA for the branch
         const refResponse = await fetch(
-          `https://api.github.com/repos/${repoFullName}/git/ref/heads/${branch}`,
+          `https://api.github.com/repos/${repoFullName}/git/refs/heads/${branch}`,
           { headers }
         );
         const refData = await refResponse.json();
@@ -313,9 +406,9 @@ export async function makeCommit(
               base_tree: treeSha,
               tree: fileBlobs.map((file) => ({
                 path: file.path,
-                mode: "100644",
-                type: "blob",
-                content: Buffer.from(file.content, "base64").toString("utf8"),
+                mode: "100644", // File mode (100644 for normal files)
+                type: "blob", // Type of object (blob for files)
+                content: Buffer.from(file.content, "base64").toString("utf8"), // Decode base64 content
               })),
             }),
           }
@@ -332,9 +425,9 @@ export async function makeCommit(
             method: "POST",
             headers,
             body: JSON.stringify({
-              message,
-              tree: treeData.sha,
-              parents: [latestCommitSha],
+              message: message, // Commit message
+              tree: treeData.sha, // SHA of the new tree
+              parents: [latestCommitSha], // Parent commit SHA
             }),
           }
         );
@@ -350,7 +443,7 @@ export async function makeCommit(
             method: "PATCH",
             headers,
             body: JSON.stringify({
-              sha: newCommitData.sha,
+              sha: newCommitData.sha, // SHA of the new commit
             }),
           }
         );
