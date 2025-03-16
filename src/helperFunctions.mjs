@@ -47,10 +47,15 @@ export function createAndInstallPackageJson(dirPath, dependencies) {
 
 export function moveJsonFile(sourceFilePath, targetDir) {
   try {
+    // Check if sourceFilePath is defined
+    if (!sourceFilePath) {
+      throw new Error("Source file path is undefined.");
+    }
+
     // Debug: Log the input sourceFilePath
     console.log("Input sourceFilePath:", sourceFilePath);
 
-    // Resolve the source file path relative to the current working directory
+    // Resolve the source file path
     const resolvedSourceFilePath = path.resolve(sourceFilePath);
     console.log("Resolved source file path:", resolvedSourceFilePath);
 
@@ -63,30 +68,46 @@ export function moveJsonFile(sourceFilePath, targetDir) {
     }
 
     // Ensure the target directory exists
-    fs.ensureDirSync(targetDir);
+    try {
+      fs.ensureDirSync(targetDir);
+      console.log("Target directory created or already exists:", targetDir);
+    } catch (error) {
+      throw new Error(`Failed to create target directory: ${error.message}`);
+    }
 
     // Extract the filename from the source path
-    const fileName = path.basename(resolvedSourceFilePath);
-    console.log("File name:", fileName);
+    let fileName;
+    try {
+      fileName = path.basename(resolvedSourceFilePath);
+      console.log("File name:", fileName);
+    } catch (error) {
+      throw new Error(`Failed to extract filename: ${error.message}`);
+    }
 
     // Construct the target file path
-    const targetFilePath = path.join(targetDir, fileName);
-    console.log("Target file path:", targetFilePath);
+    let targetFilePath;
+    try {
+      targetFilePath = path.join(targetDir, fileName);
+      console.log("Target file path:", targetFilePath);
+    } catch (error) {
+      throw new Error(`Failed to construct target file path: ${error.message}`);
+    }
 
     // Move the file
-    fs.moveSync(resolvedSourceFilePath, targetFilePath, { overwrite: true });
+    try {
+      fs.moveSync(resolvedSourceFilePath, targetFilePath, { overwrite: true });
+      console.log(`File moved successfully to: ${targetFilePath}`);
+    } catch (error) {
+      throw new Error(`Failed to move the file: ${error.message}`);
+    }
 
     // Verify the file was moved
-    try{
-      if (fs.existsSync(targetFilePath)) {
-      console.log(`File moved successfully to: ${targetFilePath}`);
+    if (fs.existsSync(targetFilePath)) {
+      console.log("File verification successful.");
       return targetFilePath; // Return the path of the moved file
     } else {
-      throw new Error("Failed to move the file.");
+      throw new Error("Failed to verify the moved file.");
     }
-  }catch(error){
-    console.error('Unable to move File', error.message)
-  }
   } catch (error) {
     console.error("An error occurred while moving the file:", error.message);
     throw error; // Rethrow the error if you want the calling code to handle it
