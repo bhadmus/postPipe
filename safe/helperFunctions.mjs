@@ -45,54 +45,6 @@ export function createAndInstallPackageJson(dirPath, dependencies) {
   console.log("Dependencies installed successfully.");
 }
 
-export function moveJsonFile(sourceFilePath, targetDir) {
-  try {
-    // Debug: Log the input sourceFilePath
-    console.log("Input sourceFilePath:", sourceFilePath);
-
-    // Resolve the source file path relative to the current working directory
-    const resolvedSourceFilePath = path.resolve(sourceFilePath);
-    console.log("Resolved source file path:", resolvedSourceFilePath);
-
-    // Ensure the source file exists and is a JSON file
-    if (!fs.existsSync(resolvedSourceFilePath)) {
-      throw new Error(`Source file does not exist: ${resolvedSourceFilePath}`);
-    }
-    if (path.extname(resolvedSourceFilePath).toLowerCase() !== ".json") {
-      throw new Error(`Source file is not a JSON file: ${resolvedSourceFilePath}`);
-    }
-
-    // Ensure the target directory exists
-    fs.ensureDirSync(targetDir);
-
-    // Extract the filename from the source path
-    const fileName = path.basename(resolvedSourceFilePath);
-    console.log("File name:", fileName);
-
-    // Construct the target file path
-    const targetFilePath = path.join(targetDir, fileName);
-    console.log("Target file path:", targetFilePath);
-
-    // Move the file
-    fs.moveSync(resolvedSourceFilePath, targetFilePath, { overwrite: true });
-
-    // Verify the file was moved
-    try{
-      if (fs.existsSync(targetFilePath)) {
-      console.log(`File moved successfully to: ${targetFilePath}`);
-      return targetFilePath; // Return the path of the moved file
-    } else {
-      throw new Error("Failed to move the file.");
-    }
-  }catch(error){
-    console.error('Unable to move File', error.message)
-  }
-  } catch (error) {
-    console.error("An error occurred while moving the file:", error.message);
-    throw error; // Rethrow the error if you want the calling code to handle it
-  }
-}
-
 /**
  * Generate a specific YAML file for running Postman tests.
  * @param {string} versionChoice - Version Control tool type.
@@ -108,29 +60,9 @@ export function generateYaml(
 ) {
   const outputDir = path.dirname(outputYamlFilePath);
   fs.ensureDirSync(outputDir);
-  /** SOLUTION
-   * CREATE A ROOT FOLDER FOR WHAT'S TO BE CONVERTED
-   * EXTRACT THE COLLECTION INTO THE NEW JSON FILE IN A SPECIFIED PLACE IN THE ROOT FOLDER
-   * THAT FORMS THE COLLECTION FILE PATH. SAME MODEL FOR ENVIRONMENT FILE PATH AS WELL.
-   * IN SHAA ALLAH
-   */
-
-  // Convert absolute paths to relative paths
-  const relativeCollectionPath = path.normalize(process.cwd(), collectionFilePath);
-  const relativeEnvironmentPath = environmentFilePath
-    ? path.normalize(process.cwd(), environmentFilePath)
-    : null;
-
-  // Ensure paths use forward slashes
-  const normalizedCollectionPath = relativeCollectionPath.replace(/\\/g, "/");
-  const normalizedEnvironmentPath = relativeEnvironmentPath
-    ? relativeEnvironmentPath.replace(/\\/g, "/")
-    : null;
-
   let yamlFileContent;
   switch (versionChoice) {
     case "GitHub":
-      console.log(`Using the ${normalizedCollectionPath}`)
       if (!environmentFilePath) {
         yamlFileContent = `
     
@@ -162,7 +94,7 @@ jobs:
           run: |
             echo "create report directory"
             mkdir -p ./newman
-            npx newman run ${normalizedCollectionPath} -r cli,htmlextra --reporter-htmlextra-export ./newman/results.html
+            npx newman run ${collectionFilePath} -r cli,htmlextra --reporter-htmlextra-export ./newman/results.html
 
         - name: Upload Test Results
           uses: actions/upload-artifact@v4
@@ -201,7 +133,7 @@ jobs:
           run: |
             echo "create report directory"
             mkdir -p ./newman
-            npx newman run ${normalizedCollectionPath} -e ${normalizedEnvironmentPath} -r cli,htmlextra --reporter-htmlextra-export ./newman/results.html
+            npx newman run ${collectionFilePath} -e ${environmentFilePath} -r cli,htmlextra --reporter-htmlextra-export ./newman/results.html
 
         - name: Upload Test Results
           uses: actions/upload-artifact@v4
@@ -319,342 +251,9 @@ pipelines:
  * @param {string} message - Commit message.
  */
 
-// export async function makeCommit(
-//   versionChoice,
-//   token, // This could be a token for GitHub, or GitLab or an app password for Bitbucket
-//   repoFullName,
-//   files,
-//   message
-// ) {
-//   switch (versionChoice) {
-//     case "GitHub":
-//       try {
-//         const headers = {
-//           Authorization: `token ${token}`,
-//           Accept: "application/vnd.github.v3+json", // Correct header for GitHub API
-//         };
-
-//         const branch = "main";
-//         const fileBlobs = [];
-
-//         for (const file of files) {
-//           const content = fs.readFileSync(file, "base64");
-//           const repoFilePath = path
-//             .relative(process.cwd(), file)
-//             .replace(/\\/g, "/"); // Ensure the file path is resolved into an absolute path and uses forward slashes
-
-//           fileBlobs.push({
-//             path: repoFilePath,
-//             content,
-//           });
-//         }
-
-//         // Fetch the latest commit SHA for the branch
-//         const refResponse = await fetch(
-//           `https://api.github.com/repos/${repoFullName}/git/ref/heads/${branch}`,
-//           { headers }
-//         );
-//         const refData = await refResponse.json();
-//         if (!refResponse.ok) {
-//           throw new Error(`Failed to fetch reference: ${refData.message}`);
-//         }
-//         const latestCommitSha = refData.object.sha;
-
-//         // Fetch the tree SHA of the latest commit
-//         const commitResponse = await fetch(
-//           `https://api.github.com/repos/${repoFullName}/git/commits/${latestCommitSha}`,
-//           { headers }
-//         );
-//         const commitData = await commitResponse.json();
-//         if (!commitResponse.ok) {
-//           throw new Error(`Failed to fetch commit: ${commitData.message}`);
-//         }
-//         const treeSha = commitData.tree.sha;
-
-//         // Create a new tree with the updated files
-//         const treeResponse = await fetch(
-//           `https://api.github.com/repos/${repoFullName}/git/trees`,
-//           {
-//             method: "POST",
-//             headers,
-//             body: JSON.stringify({
-//               base_tree: treeSha,
-//               tree: fileBlobs.map((file) => ({
-//                 path: file.path,
-//                 mode: "100644",
-//                 type: "blob",
-//                 content: Buffer.from(file.content, "base64").toString("utf8"),
-//               })),
-//             }),
-//           }
-//         );
-//         const treeData = await treeResponse.json();
-//         if (!treeResponse.ok) {
-//           throw new Error(`Failed to create tree: ${treeData.message}`);
-//         }
-
-//         // Create a new commit
-//         const newCommitResponse = await fetch(
-//           `https://api.github.com/repos/${repoFullName}/git/commits`,
-//           {
-//             method: "POST",
-//             headers,
-//             body: JSON.stringify({
-//               message,
-//               tree: treeData.sha,
-//               parents: [latestCommitSha],
-//             }),
-//           }
-//         );
-//         const newCommitData = await newCommitResponse.json();
-//         if (!newCommitResponse.ok) {
-//           throw new Error(`Failed to create commit: ${newCommitData.message}`);
-//         }
-
-//         // Update the branch to point to the new commit
-//         const updateResponse = await fetch(
-//           `https://api.github.com/repos/${repoFullName}/git/refs/heads/${branch}`,
-//           {
-//             method: "PATCH",
-//             headers,
-//             body: JSON.stringify({
-//               sha: newCommitData.sha,
-//             }),
-//           }
-//         );
-//         const updateData = await updateResponse.json();
-//         if (!updateResponse.ok) {
-//           throw new Error(`Failed to update branch: ${updateData.message}`);
-//         }
-
-//         console.log(`Commit successfully created: ${newCommitData.sha}`);
-//       } catch (error) {
-//         console.error(
-//           "An error occurred while committing files to GitHub:",
-//           error.message
-//         );
-//         throw error;
-//       }
-//       break;
-
-//     case "Gitlab":
-//       try {
-//         const headers = {
-//           Authorization: `Bearer ${token}`,
-//           "Content-Type": "application/json",
-//           Accept: "application/vnd.gitlab.v4+json",
-//         };
-
-//         // Step 1: Get the authenticated user's ID
-//         const userResponse = await fetch("https://gitlab.com/api/v4/user", {
-//           headers,
-//         });
-//         const userData = await userResponse.json();
-
-//         if (!userResponse.ok) {
-//           throw new Error(`Failed to fetch user ID: ${userData.message}`);
-//         }
-
-//         const userId = userData.id;
-
-//         // Step 2: Get the project ID based on the repoFullName
-//         const projectsResponse = await fetch(
-//           `https://gitlab.com/api/v4/users/${userId}/projects`,
-//           { headers }
-//         );
-//         const projectsData = await projectsResponse.json();
-
-//         if (!projectsResponse.ok) {
-//           throw new Error(
-//             `Failed to fetch projects for user ID ${userId}: ${projectsData.message}`
-//           );
-//         }
-
-//         // Find the project that matches the repoFullName
-//         const project = projectsData.find(
-//           (proj) => proj.path_with_namespace === repoFullName
-//         );
-
-//         if (!project) {
-//           throw new Error(
-//             `Project ${repoFullName} not found for user ID ${userId}`
-//           );
-//         }
-
-//         const projectId = project.id;
-//         const branch = "main";
-
-//         // Step 3: Prepare the actions for the commit with existence check
-//         const actions = await Promise.all(
-//           files.map(async (file) => {
-//             const repoFilePath = path
-//               .relative(process.cwd(), file)
-//               .replace(/\\/g, "/");
-
-//             // Check if the file exists in the repository
-//             const fileExistsResponse = await fetch(
-//               `https://gitlab.com/api/v4/projects/${projectId}/repository/files/${encodeURIComponent(
-//                 repoFilePath
-//               )}/raw?ref=${branch}`,
-//               { headers }
-//             );
-
-//             const content = fs.readFileSync(file, "utf8");
-
-//             // Determine the correct action based on the file's existence
-//             const actionType = fileExistsResponse.ok ? "update" : "create";
-
-//             return {
-//               action: actionType,
-//               file_path: repoFilePath,
-//               content: content,
-//             };
-//           })
-//         );
-
-//         // Step 4: Create the commit with the updated files
-//         const commitResponse = await fetch(
-//           `https://gitlab.com/api/v4/projects/${projectId}/repository/commits`,
-//           {
-//             method: "POST",
-//             headers,
-//             body: JSON.stringify({
-//               branch,
-//               commit_message: message,
-//               actions,
-//             }),
-//           }
-//         );
-
-//         const commitData = await commitResponse.json();
-
-//         if (!commitResponse.ok) {
-//           throw new Error(`Failed to create commit: ${commitData.message}`);
-//         }
-
-//         console.log(`Commit successfully created: ${commitData.id}`);
-//       } catch (error) {
-//         console.error(
-//           "An error occurred while committing files to GitLab:",
-//           error.message
-//         );
-//         throw error;
-//       }
-//       break;
-
-//     case "Bitbucket":
-//       try {
-//         const authHeader = `Basic ${Buffer.from(
-//           `${username}:${token}`
-//         ).toString("base64")}`;
-//         const baseUrl = `https://api.bitbucket.org/2.0/repositories/${repoFullName}`;
-//         const branch = "main";
-
-//         // Step 1: Check if the pipeline configuration file exists
-//         const pipelineFileUrl = `${baseUrl}/src/${branch}/bitbucket-pipelines.yml`;
-//         let pipelineFileResponse = await fetch(pipelineFileUrl, {
-//           headers: {
-//             Authorization: authHeader,
-//             Accept: "application/json",
-//           },
-//         });
-
-//         if (pipelineFileResponse.status === 404) {
-//           console.warn(`No Commits Yet. Enabling Bitbucket pipelines.`);
-
-//           // Enable pipelines if the configuration file does not exist
-//           const pipelineEnableUrl = `${baseUrl}/pipelines_config`;
-//           const enablePipelineResponse = await fetch(pipelineEnableUrl, {
-//             method: "PUT",
-//             headers: {
-//               "Content-Type": "application/json",
-//               Authorization: authHeader,
-//             },
-//             body: JSON.stringify({ enabled: true }),
-//           });
-
-//           if (!enablePipelineResponse.ok) {
-//             const errorText = await enablePipelineResponse.text();
-//             throw new Error(`Failed to enable pipelines: ${errorText}`);
-//           }
-//         } else if (!pipelineFileResponse.ok) {
-//           const errorText = await pipelineFileResponse.text();
-//           throw new Error(
-//             `Failed to check pipeline configuration file: ${errorText}`
-//           );
-//         }
-
-//         // Step 2: Fetch the latest commit SHA for the branch
-//         const branchResponse = await fetch(
-//           `${baseUrl}/refs/branches/${branch}`,
-//           {
-//             headers: {
-//               Authorization: authHeader,
-//               Accept: "application/json",
-//             },
-//           }
-//         );
-
-//         if (!branchResponse.ok) {
-//           const errorText = await branchResponse.text();
-//           throw new Error(`Failed to fetch branch: ${errorText}`);
-//         }
-
-//         const branchData = await branchResponse.json();
-//         const latestCommitSha = branchData.target.hash;
-
-//         // Step 3: Prepare form-data for the commit
-//         const form = new FormData();
-//         form.append("message", message); // Commit message
-//         form.append("branch", branch); // Branch to commit to
-//         form.append("parents", latestCommitSha); // Parent commit SHA
-
-//         // Add each file to the form-data
-//         for (const file of files) {
-//           const content = fs.readFileSync(file); // Read file content as buffer
-//           const repoFilePath = path
-//             .relative(process.cwd(), file)
-//             .replace(/\\/g, "/"); // Convert to relative path with forward slashes
-//           form.append(repoFilePath, content, {
-//             filename: repoFilePath,
-//             contentType: "application/octet-stream", // MIME type for binary data
-//           });
-//         }
-
-//         // Step 4: Send the commit request
-//         const commitResponse = await fetch(`${baseUrl}/src`, {
-//           method: "POST",
-//           headers: {
-//             Authorization: authHeader,
-//             ...form.getHeaders(), // Headers required for multipart/form-data
-//           },
-//           body: form, // Multipart form-data body
-//         });
-
-//         // Step 5: Check for response and log accordingly
-//         if (!commitResponse.ok) {
-//           const errorText = await commitResponse.text();
-//           throw new Error(`Failed to create commit: ${errorText}`);
-//         } else {
-//           console.log(`Commit successfully created`);
-//         }
-//       } catch (error) {
-//         console.error(
-//           "An error occurred while committing files to Bitbucket:",
-//           error.message
-//         );
-//         throw error;
-//       }
-//       break;
-
-//     default:
-//       throw new Error("Unsupported version control platform");
-//   }
-// }
-
 export async function makeCommit(
   versionChoice,
-  token,
+  token, // This could be a token for GitHub, or GitLab or an app password for Bitbucket
   repoFullName,
   files,
   message
@@ -664,42 +263,27 @@ export async function makeCommit(
       try {
         const headers = {
           Authorization: `token ${token}`,
-          Accept: "application/vnd.github.v3+json",
+          Accept: "application/vnd.github.v3+json", // Correct header for GitHub API
         };
 
         const branch = "main";
         const fileBlobs = [];
 
-        // Process each file to be committed
         for (const file of files) {
-          // Ensure the file exists
-          if (!fs.existsSync(file)) {
-            throw new Error(`File not found: ${file}`);
-          }
-
-          // Read file content as base64
           const content = fs.readFileSync(file, "base64");
+          const repoFilePath = path
+            .relative(process.cwd(), file)
+            .replace(/\\/g, "/"); // Ensure the file path is relative and uses forward slashes
 
-          // Normalize the path and ensure it uses forward slashes
-          const repoFilePath = path.posix.relative(process.cwd(), file);
-
-          // Validate the path to ensure it doesn't contain illegal characters
-          if (!/^[a-zA-Z0-9_\-./]+$/.test(repoFilePath)) {
-            throw new Error(`Invalid file path: ${repoFilePath}`);
-          }
-
-          console.log(`Preparing to commit file: ${repoFilePath}`); // Debugging
-
-          // Add the file to the list of blobs to be committed
           fileBlobs.push({
             path: repoFilePath,
-            content: content,
+            content,
           });
         }
 
         // Fetch the latest commit SHA for the branch
         const refResponse = await fetch(
-          `https://api.github.com/repos/${repoFullName}/git/refs/heads/${branch}`,
+          `https://api.github.com/repos/${repoFullName}/git/ref/heads/${branch}`,
           { headers }
         );
         const refData = await refResponse.json();
@@ -729,9 +313,9 @@ export async function makeCommit(
               base_tree: treeSha,
               tree: fileBlobs.map((file) => ({
                 path: file.path,
-                mode: "100644", // File mode (100644 for normal files)
-                type: "blob", // Type of object (blob for files)
-                content: Buffer.from(file.content, "base64").toString("utf8"), // Decode base64 content
+                mode: "100644",
+                type: "blob",
+                content: Buffer.from(file.content, "base64").toString("utf8"),
               })),
             }),
           }
@@ -748,9 +332,9 @@ export async function makeCommit(
             method: "POST",
             headers,
             body: JSON.stringify({
-              message: message, // Commit message
-              tree: treeData.sha, // SHA of the new tree
-              parents: [latestCommitSha], // Parent commit SHA
+              message,
+              tree: treeData.sha,
+              parents: [latestCommitSha],
             }),
           }
         );
@@ -766,7 +350,7 @@ export async function makeCommit(
             method: "PATCH",
             headers,
             body: JSON.stringify({
-              sha: newCommitData.sha, // SHA of the new commit
+              sha: newCommitData.sha,
             }),
           }
         );

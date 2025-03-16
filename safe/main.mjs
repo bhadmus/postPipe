@@ -16,7 +16,6 @@ import {
   readmeExists,
   createAndInstallPackageJson,
   exportPostmanEnvironment,
-  moveJsonFile,
 } from "./src/helperFunctions.mjs";
 
 // Load environment variables
@@ -27,17 +26,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Use path.resolve to construct the correct file path
 const packageJsonPath = path.resolve(__dirname, 'package.json');
-
-// Create a root folder to collect the collection and environment 
-
-const requestDir = [
-  path.join(process.cwd(), 'endpoints', 'collection'),
-  path.join(process.cwd(), 'endpoints', 'environment')
-]
-
-for (const dir of requestDir){
-  fs.ensureDir(dir)
-}
 
 // Read the package.json file
 const { version } = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
@@ -118,8 +106,6 @@ async function startProcess(versionChoice) {
 
   let collectionFilePath;
   let environmentFilePath;
-  let rootCollectionFilePath;
-  let rootEnvironmentFilePath;
 
   if (!environmentRequired) {
     if (collectionSource === "UID") {
@@ -142,7 +128,7 @@ async function startProcess(versionChoice) {
         name: "collectionId",
         message: "Enter the Postman collection ID:",
       });
-      collectionFilePath = path.join(process.cwd(), rootCollectionFilePath, 'collection.json');
+      collectionFilePath = path.resolve(process.cwd(), "collection.json");
       await exportPostmanCollection(
         postmanApiKey,
         collectionId,
@@ -154,7 +140,7 @@ async function startProcess(versionChoice) {
         name: "filePath",
         message: "Enter the path to the Postman collection JSON file:",
       });
-        collectionFilePath = moveJsonFile(filePath, rootCollectionFilePath);
+      collectionFilePath = path.resolve(process.cwd(), filePath);
     } else {
       console.log("Invalid option. Exiting.");
       return;
